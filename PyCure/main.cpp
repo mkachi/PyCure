@@ -66,6 +66,9 @@ int main()
 	result = Ang->CallMethod<int>("GetA");
 	printf("class Ang SetA : %d\n", result);
 
+	// Clear class Module
+	ClearModule(Ang);
+
 	PyCure_Finalize();
 	return 0;
 }

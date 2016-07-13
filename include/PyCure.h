@@ -298,6 +298,7 @@ namespace PyCure
 			internal::__PyCureModules.erase(
 				std::find(internal::__PyCureModules.cbegin(), internal::__PyCureModules.cend(), module));
 			Py_DECREF(module);
+			delete pyClass;
 		}
 		else
 		{
