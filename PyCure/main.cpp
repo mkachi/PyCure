@@ -2,50 +2,8 @@
 
 using namespace PyCure;
 
-//PyObject* TestFunc(PyObject* self)
-//{
-//	PyObject* result;
-//	printf("Call Cpp TestFunc!\n");
-//	Py_INCREF(Py_None);
-//	result = Py_None;	// return 없음
-//	return result;
-//}
-//
-//PyObject* Multiple(PyObject* self, PyObject* args)
-//{
-//	PyObject* result;
-//	int a, b;
-//	Py_INCREF(args);
-//	PyArg_ParseTuple(args, "II", &a, &b);
-//	result = PyType(a * b);
-//	return result;
-//}
-//
-//// 함수를 등록
-//// METH_KEYWORDS	: 함수가 PyCFunctionWithKeywords 타입 인자는 PyArg_ParseTupleAndKeywords함수를 사용
-//// METH_NORARGS		: 인자가 없음
-//// METH_O			: 인자가 하나인 경우
-//// METH_CLASS		: 클래스의 메소드일 경우
-//// METH_STATIC		: 클래스의 메소드일 경우
-//static PyMethodDef ExtMethods[] =
-//{ 
-//	{ "TestFunc", (PyCFunction)TestFunc, METH_NOARGS, "Excute a TestFunc" },{ NULL, NULL, 0, NULL },
-//	{ "Multiple", (PyCFunction)Multiple, METH_VARARGS, "Excute a Multiple" },{ NULL, NULL, 0, NULL }
-//};
-//
-//// 모듈에 등록
-//static PyModuleDef PyExtModule =
-//{ PyModuleDef_HEAD_INIT, "PyCureDemo", NULL, -1, ExtMethods };
-//
-//PyMODINIT_FUNC PyInit_Ext1()
-//{
-//	// 모듈을 생성
-//	return PyModule_Create(&PyExtModule);
-//}
-
 int main()
 {
-//	PyImport_AppendInittab("PyCureDemo", PyInit_Ext1);
 	PyCure_Initialize();
 
 	PyModule module = PyCure_ImportModule("Sample01");
