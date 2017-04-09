@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Embedding", "Embedding\Embedding.vcxproj", "{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Extending", "Extending\Extending.vcxproj", "{06C523E7-A4F9-4508-A526-D81767DD35D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PyCure", "PyCure", "{0AFE07DE-1A85-4D5B-8E35-B1EC23F98B99}"
+	ProjectSection(SolutionItems) = preProject
+		bin\PyCure.h = bin\PyCure.h
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Debug|x64.ActiveCfg = Debug|x64
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Debug|x64.Build.0 = Debug|x64
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Debug|x86.ActiveCfg = Debug|Win32
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Debug|x86.Build.0 = Debug|Win32
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Release|x64.ActiveCfg = Release|x64
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Release|x64.Build.0 = Release|x64
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Release|x86.ActiveCfg = Release|Win32
+		{8EF1EF13-6DB0-4A61-B5D3-676BD9507E2B}.Release|x86.Build.0 = Release|Win32
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Debug|x64.ActiveCfg = Debug|x64
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Debug|x64.Build.0 = Debug|x64
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Debug|x86.ActiveCfg = Debug|Win32
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Debug|x86.Build.0 = Debug|Win32
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Release|x64.ActiveCfg = Release|x64
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Release|x64.Build.0 = Release|x64
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Release|x86.ActiveCfg = Release|Win32
+		{06C523E7-A4F9-4508-A526-D81767DD35D6}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
