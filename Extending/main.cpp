@@ -1,6 +1,6 @@
 #include <PyCure.h>
 // build setting
-// Release and x64
+// Release and x86
 using namespace PyCure;
 
 static PyObject* Native_Multiple(PyObject* self, PyObject* args)
