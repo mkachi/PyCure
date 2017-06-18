@@ -161,6 +161,19 @@ namespace PyCure
 		return result; \
 	}
 
+	template<typename T>
+	inline T GetArg(PyObject* tuple, unsigned int index) noexcept
+	{	}
+#define PyCure_GetArg(_TYPE_, _ARG_) \
+	template<> \
+	inline _TYPE_ GetArg(PyObject* tuple, unsigned int index) noexcept \
+	{ \
+		_TYPE_ result; \
+		PyArg_Parse(PyTuple_GetItem(tuple,index), _ARG_, &result); \
+		Py_DECREF(tuple); \
+		return result; \
+	}
+
 	PyCure_PyType_PyToCpp(char*, "s");
 	PyCure_PyType_PyToCpp(const char*, "s");
 	PyCure_PyType_PyToCpp(int, "i");
@@ -181,6 +194,13 @@ namespace PyCure
 	PyCure_GetTupleItem(char, "c");
 	PyCure_GetTupleItem(double, "d");
 	PyCure_GetTupleItem(float, "f");
+
+	PyCure_GetArg(char*, "s");
+	PyCure_GetArg(const char*, "s");
+	PyCure_GetArg(int, "i");
+	PyCure_GetArg(char, "c");
+	PyCure_GetArg(double, "d");
+	PyCure_GetArg(float, "f");
 
 	template<typename T>
 	inline void SetVar(PyModule module, const char* name, T value) noexcept

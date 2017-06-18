@@ -3,7 +3,4 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Release\EmbeddingTest.py" />
-  </ItemGroup>
 </Project>

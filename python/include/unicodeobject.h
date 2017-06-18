@@ -103,10 +103,6 @@ typedef wchar_t Py_UNICODE;
 # endif
 #endif
 
-#if defined(MS_WINDOWS)
-#  define HAVE_MBCS
-#endif
-
 #ifdef HAVE_WCHAR_H
 /* Work around a cosmetic bug in BSDI 4.x wchar.h; thanks to Thomas Wouters */
 # ifdef _HAVE_BSDI
@@ -117,21 +113,9 @@ typedef wchar_t Py_UNICODE;
 
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
-#if SIZEOF_INT == 4
-typedef unsigned int Py_UCS4;
-#elif SIZEOF_LONG == 4
-typedef unsigned long Py_UCS4;
-#else
-#error "Could not find a proper typedef for Py_UCS4"
-#endif
-
-#if SIZEOF_SHORT == 2
-typedef unsigned short Py_UCS2;
-#else
-#error "Could not find a proper typedef for Py_UCS2"
-#endif
-
-typedef unsigned char Py_UCS1;
+typedef uint32_t Py_UCS4;
+typedef uint16_t Py_UCS2;
+typedef uint8_t Py_UCS1;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
@@ -172,11 +156,11 @@ typedef unsigned char Py_UCS1;
     Py_UNICODE_ISNUMERIC(ch))
 
 #define Py_UNICODE_COPY(target, source, length) \
-    Py_MEMCPY((target), (source), (length)*sizeof(Py_UNICODE))
+    memcpy((target), (source), (length)*sizeof(Py_UNICODE))
 
 #define Py_UNICODE_FILL(target, value, length) \
     do {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
-    for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
+        for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
 /* macros to work with surrogates */
@@ -734,10 +718,12 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromASCII(
     Py_ssize_t size);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject*) PyUnicode_Substring(
     PyObject *str,
     Py_ssize_t start,
     Py_ssize_t end);
+#endif
 
 #ifndef Py_LIMITED_API
 /* Compute the maximum character of the substring unicode[start:end].
@@ -748,8 +734,9 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
     Py_ssize_t end);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Copy the string into a UCS4 buffer including the null character if copy_null
-   is set. Return NULL and raise an exception on error. Raise a ValueError if
+   is set. Return NULL and raise an exception on error. Raise a SystemError if
    the buffer is smaller than the string. Return buffer on success.
 
    buflen is the length of the buffer in (Py_UCS4) characters. */
@@ -763,6 +750,7 @@ PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4(
  * PyMem_Malloc; if this fails, NULL is returned with a memory error
    exception set. */
 PyAPI_FUNC(Py_UCS4*) PyUnicode_AsUCS4Copy(PyObject *unicode);
+#endif
 
 /* Return a read-only pointer to the Unicode object's internal
    Py_UNICODE buffer.
@@ -787,11 +775,13 @@ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     );
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Get the length of the Unicode object. */
 
 PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
     PyObject *unicode
 );
+#endif
 
 /* Get the number of Py_UNICODE units in the
    string representation. */
@@ -800,6 +790,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
     PyObject *unicode           /* Unicode object */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Read a character from the string. */
 
 PyAPI_FUNC(Py_UCS4) PyUnicode_ReadChar(
@@ -817,6 +808,7 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
     Py_ssize_t index,
     Py_UCS4 character
     );
+#endif
 
 #ifndef Py_LIMITED_API
 /* Get the maximum ordinal for a Unicode character. */
@@ -900,7 +892,7 @@ typedef struct {
     /* minimum character (default: 127, ASCII) */
     Py_UCS4 min_char;
 
-    /* If non-zero, overallocate the buffer by 25% (default: 0). */
+    /* If non-zero, overallocate the buffer (default: 0). */
     unsigned char overallocate;
 
     /* If readonly is 1, buffer is a shared string (cannot be modified)
@@ -933,6 +925,23 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer);
 PyAPI_FUNC(int)
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar);
+
+/* Prepare the buffer to have at least the kind KIND.
+   For example, kind=PyUnicode_2BYTE_KIND ensures that the writer will
+   support characters in range U+000-U+FFFF.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+#define _PyUnicodeWriter_PrepareKind(WRITER, KIND)                    \
+    (assert((KIND) != PyUnicode_WCHAR_KIND),                          \
+     (KIND) <= (WRITER)->kind                                         \
+     ? 0                                                              \
+     : _PyUnicodeWriter_PrepareKindInternal((WRITER), (KIND)))
+
+/* Don't call this function directly, use the _PyUnicodeWriter_PrepareKind()
+   macro instead. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
+                                     enum PyUnicode_Kind kind);
 
 /* Append a Unicode character.
    Return 0 on success, raise an exception and return -1 on error. */
@@ -1170,22 +1179,30 @@ PyAPI_FUNC(PyObject*) PyUnicode_Decode(
     );
 
 /* Decode a Unicode object unicode and return the result as Python
-   object. */
+   object.
+
+   This API is DEPRECATED. The only supported standard encoding is rot13.
+   Use PyCodec_Decode() to decode with rot13 and non-standard codecs
+   that decode from str. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.6);
 
 /* Decode a Unicode object unicode and return the result as Unicode
-   object. */
+   object.
+
+   This API is DEPRECATED. The only supported standard encoding is rot13.
+   Use PyCodec_Decode() to decode with rot13 and non-standard codecs
+   that decode from str to str. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.6);
 
 /* Encodes a Py_UNICODE buffer of the given size and returns a
    Python string object. */
@@ -1200,13 +1217,18 @@ PyAPI_FUNC(PyObject*) PyUnicode_Encode(
 #endif
 
 /* Encodes a Unicode object and returns the result as Python
-   object. */
+   object.
+
+   This API is DEPRECATED.  It is superceeded by PyUnicode_AsEncodedString()
+   since all standard encodings (except rot13) encode str to bytes.
+   Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
+   that encode form str to non-bytes. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.6);
 
 /* Encodes a Unicode object and returns the result as Python string
    object. */
@@ -1218,13 +1240,17 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
     );
 
 /* Encodes a Unicode object and returns the result as Unicode
-   object. */
+   object.
+
+   This API is DEPRECATED.  The only supported standard encodings is rot13.
+   Use PyCodec_Encode() to encode with rot13 and non-standard codecs
+   that encode from str to str. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    );
+    ) Py_DEPRECATED(3.6);
 
 /* Build an encoding map. */
 
@@ -1468,6 +1494,19 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUnicodeEscape(
     const char *errors          /* error handling */
     );
 
+#ifndef Py_LIMITED_API
+/* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
+   chars. */
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
+        const char *string,     /* Unicode-Escape encoded string */
+        Py_ssize_t length,      /* size of string */
+        const char *errors,     /* error handling */
+        const char **first_invalid_escape  /* on return, points to first
+                                              invalid escaped char in
+                                              string. */
+);
+#endif
+
 PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(
     PyObject *unicode           /* Unicode object */
     );
@@ -1640,13 +1679,13 @@ PyAPI_FUNC(PyObject *) PyUnicode_TranslateCharmap(
     );
 #endif
 
-#ifdef HAVE_MBCS
+#ifdef MS_WINDOWS
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCS(
     const char *string,         /* MBCS encoded string */
-    Py_ssize_t length,              /* size of string */
+    Py_ssize_t length,          /* size of string */
     const char *errors          /* error handling */
     );
 
@@ -1657,6 +1696,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCSStateful(
     Py_ssize_t *consumed        /* bytes consumed */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeCodePageStateful(
     int code_page,              /* code page number */
     const char *string,         /* encoded string */
@@ -1664,6 +1704,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeCodePageStateful(
     const char *errors,         /* error handling */
     Py_ssize_t *consumed        /* bytes consumed */
     );
+#endif
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(
     PyObject *unicode           /* Unicode object */
@@ -1677,13 +1718,15 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
     );
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
     int code_page,              /* code page number */
     PyObject *unicode,          /* Unicode object */
     const char *errors          /* error handling */
     );
+#endif
 
-#endif /* HAVE_MBCS */
+#endif /* MS_WINDOWS */
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 
@@ -1744,6 +1787,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 
 /* --- Locale encoding --------------------------------------------------- */
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Decode a string from the current locale encoding. The decoder is strict if
    *surrogateescape* is equal to zero, otherwise it uses the 'surrogateescape'
    error handler (PEP 383) to escape undecodable bytes. If a byte sequence can
@@ -1773,6 +1817,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
     PyObject *unicode,
     const char *errors
     );
+#endif
 
 /* --- File system encoding ---------------------------------------------- */
 
@@ -1938,6 +1983,14 @@ PyAPI_FUNC(PyObject*) PyUnicode_Join(
     PyObject *seq               /* Sequence object */
     );
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyUnicode_JoinArray(
+    PyObject *separator,
+    PyObject **items,
+    Py_ssize_t seqlen
+    );
+#endif /* Py_LIMITED_API */
+
 /* Return 1 if substr matches str[start:end] at the given tail end, 0
    otherwise. */
 
@@ -1961,6 +2014,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_Find(
     int direction               /* Find direction: +1 forward, -1 backward */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Like PyUnicode_Find, but search for single character only. */
 PyAPI_FUNC(Py_ssize_t) PyUnicode_FindChar(
     PyObject *str,
@@ -1969,6 +2023,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_FindChar(
     Py_ssize_t end,
     int direction
     );
+#endif
 
 /* Count the number of occurrences of substr in str[start:end]. */
 
@@ -2000,26 +2055,43 @@ PyAPI_FUNC(int) PyUnicode_Compare(
     );
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(int) _PyUnicode_CompareWithId(
+/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
+   0 otherwise.  The right argument must be ASCII identifier.
+   Any error occurs inside will be cleared before return. */
+
+PyAPI_FUNC(int) _PyUnicode_EqualToASCIIId(
     PyObject *left,             /* Left string */
     _Py_Identifier *right       /* Right identifier */
     );
 #endif
+
+/* Compare a Unicode object with C string and return -1, 0, 1 for less than,
+   equal, and greater than, respectively.  It is best to pass only
+   ASCII-encoded strings, but the function interprets the input string as
+   ISO-8859-1 if it contains non-ASCII characters.
+   This function does not raise exceptions. */
 
 PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,
     const char *right           /* ASCII-encoded string */
     );
 
+#ifndef Py_LIMITED_API
+/* Test whether a unicode is equal to ASCII string.  Return 1 if true,
+   0 otherwise.  The right argument must be ASCII-encoded string.
+   Any error occurs inside will be cleared before return. */
+
+PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(
+    PyObject *left,
+    const char *right           /* ASCII-encoded string */
+    );
+#endif
+
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised
-   - Py_True or Py_False for successfully comparisons
+   - Py_True or Py_False for successful comparisons
    - Py_NotImplemented in case the type combination is unknown
-
-   Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
-   case the conversion of the arguments to Unicode fails with a
-   UnicodeDecodeError.
 
    Possible values for op:
 
@@ -2248,10 +2320,16 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 #endif
 
+#ifndef Py_LIMITED_API
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Clear all static strings. */
 PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
+
+/* Fast equality check when the inputs are known to be exact unicode types
+   and where the hash values are equal (i.e. a very probable match) */
+PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

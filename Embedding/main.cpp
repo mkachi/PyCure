@@ -1,6 +1,5 @@
 #include <PyCure.h>
-// build setting
-// Release and x86
+
 using namespace PyCure;
 
 int main()
