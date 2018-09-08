@@ -12,6 +12,10 @@ class SampleClass:
 		self._a = a;
 		return
 
+	def getMultiValue(self):
+		print("Call SampleClass getMultiValue() has return value 2");
+		return 1, 2
+
 def function1():
 	print("Call function1()")
 	return
